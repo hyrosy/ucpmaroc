@@ -1,0 +1,97 @@
+.three-d-animation-section {
+  background-color: var(--color-gray-900); /* Dark background based on the image */
+  padding: 4rem 0; /* Adjust padding as needed */
+}
+
+.three-d-animation-container {
+  display: grid;
+  grid-template-columns: 1fr; /* Single column by default for small screens */
+  gap: 3rem; /* Adjust gap as needed */
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .three-d-animation-container {
+    grid-template-columns: 1fr 1fr; /* Two columns on medium and larger screens */
+  }
+}
+
+.three-d-animation-content h3 {
+  font-size: 2.5rem; /* Adjust font size as needed */
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: white; /* White text for dark background */
+}
+
+.three-d-animation-content p {
+  font-size: 1.125rem; /* Adjust font size as needed */
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  color: rgba(255, 255, 255, 0.8); /* Light white color for description */
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Single column by default */
+  gap: 1.5rem; /* Adjust gap as needed */
+}
+
+@media (min-width: 576px) {
+  .features-grid {
+    grid-template-columns: 1fr 1fr; /* Two columns on small and larger screens */
+  }
+}
+
+.feature-card {
+  background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent white background */
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Light border */
+  display: flex;
+  align-items: flex-start;
+}
+
+.feature-card .icon {
+  color: var(--color-primary-400); /* Adjust icon color as needed (e.g., a lighter yellow for dark background) */
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.feature-card h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.feature-card p {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.7); /* Lighter text for description */
+  line-height: 1.5;
+}
+
+.three-d-animation {
+  /* Styles for the 3D animation container */
+  width: 100%;
+  height: 400px; /* Adjust height as needed */
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.three-d-animation.loading {
+  cursor: default;
+}
+
+/* Responsive adjustments for 3D animation container */
+@media (max-width: 768px) {
+  .three-d-animation {
+    height: 300px; /* Adjust height for medium screens */
+  }
+}
+
+@media (max-width: 576px) {
+  .three-d-animation {
+    height: 250px; /* Adjust height for small screens */
+  }
+}

@@ -1,0 +1,53 @@
+.what-we-offer-section {
+  /* Using Tailwind classes for most styling, CSS file for potential overrides or complex selectors */
+  font-family: 'Inter', sans-serif; /* Assuming Inter font, adjust if different */
+}
+
+.what-we-offer-section .pre-title {
+  /* Tailwind: text-teal-500 uppercase tracking-wider font-semibold text-sm mb-2 */
+  /* color: #14b8a6; /* Example teal color */
+}
+
+.what-we-offer-section .main-title {
+  /* Tailwind: text-4xl md:text-5xl font-bold text-gray-800 mb-4 md:mb-0 */
+  /* color: #1f2937; /* Example dark gray */
+}
+
+.what-we-offer-section .main-title .font-light {
+  font-weight: 300; /* Or Tailwind class: font-light */
+}
+
+.what-we-offer-section .view-all-services {
+  /* Tailwind: text-gray-600 hover:text-teal-500 flex items-center */
+}
+
+.what-we-offer-section .service-card {
+  /* Tailwind: bg-white p-8 border border-gray-200 rounded-lg text-center hover:shadow-lg transition-shadow duration-300 */
+  /* min-height: 280px; /* Adjust as needed to ensure consistent card height */
+}
+
+.what-we-offer-section .icon-placeholder {
+  /* Tailwind: mb-6 mx-auto w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 */
+  /* This is a placeholder, actual icons would be SVGs or an icon font */
+  font-size: 2rem; /* Example size for text "ICON" */
+}
+
+.what-we-offer-section .service-title {
+  /* Tailwind: text-xl font-semibold text-gray-700 mb-4 */
+}
+
+.what-we-offer-section .read-more {
+  /* Tailwind: text-teal-500 hover:text-teal-600 font-medium flex items-center justify-center */
+}
+
+/* Responsive adjustments if needed beyond Tailwind's capabilities */
+@media (max-width: 768px) {
+  .what-we-offer-section .section-header {
+    /* Tailwind: text-center md:text-left */
+    /* Any specific overrides for mobile if text-center isn't enough */
+  }
+  .what-we-offer-section .main-title {
+    /* Tailwind: text-4xl md:text-5xl */
+    /* font-size: 2.25rem; /* text-4xl */
+  }
+}

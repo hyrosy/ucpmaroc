@@ -1,0 +1,80 @@
+.custom-package-section {
+  padding: 4rem 0;
+  background-color: white; /* Assuming a white background based on the image */
+}
+
+.custom-package-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Single column by default for small screens */
+  gap: 3rem; /* Adjust gap as needed */
+  align-items: center;
+}
+
+@media (min-width: 992px) {
+  .custom-package-grid {
+    grid-template-columns: 1.2fr 0.8fr; /* Two columns on larger screens, similar ratio to WhyUs */
+  }
+}
+
+.custom-package-text h3 {
+  font-size: 2rem; /* Adjust font size as needed */
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: var(--color-gray-900); /* Adjust color as needed */
+}
+
+.custom-package-text p {
+  font-size: 1.125rem; /* Adjust font size as needed */
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  color: var(--color-gray-700); /* Adjust color as needed */
+}
+
+.custom-package-text ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1.5rem;
+}
+
+.custom-package-text li {
+  margin-bottom: 0.75rem;
+  color: var(--color-gray-700); /* Adjust color as needed */
+}
+
+.custom-package-text li strong {
+  color: var(--color-gray-900); /* Adjust color as needed */
+}
+
+.custom-card-standalone {
+  /* Styles for the standalone card, potentially similar to pricing cards but without the full pricing details */
+  background-color: var(--color-gray-50); /* Light gray background */
+  padding: 2.5rem 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.custom-card-standalone .pricing-title {
+   font-size: 1.5rem;
+   font-weight: bold;
+   margin-bottom: 1rem;
+   color: var(--color-gray-900);
+}
+
+.custom-card-standalone .custom-icon {
+  color: var(--color-primary-600); /* Adjust color as needed */
+  margin-bottom: 1.5rem;
+}
+
+.custom-card-standalone .pricing-description {
+  color: var(--color-gray-700);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.custom-card-standalone .btn {
+  /* Button styles - assuming similar to other buttons */
+}

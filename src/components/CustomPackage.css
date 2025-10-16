@@ -1,0 +1,247 @@
+.custom-package-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.custom-package-modal {
+  background-color: white;
+  border-radius: 1rem;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  position: relative;
+  animation: slideUp 0.4s ease forwards;
+}
+
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.close-button:hover {
+  color: var(--color-gray-900);
+}
+
+.custom-package-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.custom-package-header h2 {
+  margin-bottom: 0.5rem;
+  color: var(--color-primary-600);
+}
+
+.custom-package-header p {
+  color: var(--color-gray-600);
+}
+
+.custom-package-options {
+  margin-bottom: 2rem;
+}
+
+.option-row {
+  margin-bottom: 1.5rem;
+}
+
+.option-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.option-value {
+  color: var(--color-primary-600);
+}
+
+.custom-package-summary {
+  border-top: 1px solid var(--color-gray-200);
+  padding-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-price {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-price span:first-child {
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
+  margin-bottom: 0.25rem;
+}
+
+.summary-price .price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary-600);
+}
+
+.custom-package-form {
+  margin-bottom: 2rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 576px) {
+  .custom-package-modal {
+    padding: 1.5rem;
+    width: 95%;
+  }
+  
+  .custom-package-summary {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .summary-price {
+    text-align: center;
+  }
+
+  /* Footer adjustments for mobile */
+  .custom-package-modal > div:nth-child(4) { /* Targeting the footer div */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .custom-package-modal > div:nth-child(4) > div:first-child { /* Step indicator */
+    margin-bottom: 1rem;
+  }
+
+  .custom-package-modal > div:nth-child(4) > div:last-child > div { /* Button container */
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+  }
+
+  .custom-package-modal > div:nth-child(4) > div:last-child > div button {
+    width: 100%;
+  }
+}
+.custom-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--color-gray-300);
+  border-radius: 0.5rem;
+  background-color: white;
+  font-size: 1rem;
+  color: var(--color-gray-700);
+  appearance: none; /* Remove default arrow */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1em;
+  cursor: pointer;
+}
+
+.custom-select:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-500-rgb), 0.25); /* Assuming you have --color-primary-500-rgb or adjust as needed */
+}
+
+/* Style for option-value when it's next to a select */
+.option-row select + .option-value {
+  /* Adjust if needed, or remove if not necessary */
+  /* Example: margin-left: 0.5rem; */
+}
+.progress-bar-container {
+  width: 100%;
+  background-color: var(--color-gray-200);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  height: 10px; /* Adjust height as needed */
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: var(--color-primary-500);
+  border-radius: 0.5rem;
+  transition: width 0.3s ease-in-out;
+}
+
+.step-indicator {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--color-gray-600);
+  font-size: 0.875rem;
+}
+
+.custom-package-options h4 {
+  margin-bottom: 1rem;
+  color: var(--color-primary-600);
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--color-gray-200);
+  padding-bottom: 0.5rem;
+}
+
+.navigation-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.review-summary {
+  margin-bottom: 1.5rem;
+}
+
+.review-summary h5 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-primary-600);
+}
+
+.review-summary ul {
+  list-style: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.review-summary li, .review-summary p {
+  color: var(--color-gray-700);
+  margin-bottom: 0.25rem;
+}

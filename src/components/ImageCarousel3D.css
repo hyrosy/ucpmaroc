@@ -1,0 +1,85 @@
+.image-carousel-3d-section {
+  background-color: var(--color-gray-900); /* Dark background based on the image */
+  padding: 3rem 0; /* Adjust padding as needed */
+}
+
+.image-carousel-3d-section .section-title {
+  font-size: 3.5rem; /* Adjust font size as needed */
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  margin-top: 2.5rem; /* Adjust margin as needed */
+  margin-bottom: 1.5rem;
+}
+
+.image-carousel-3d-section .section-description {
+  color: rgba(255, 255, 255, 0.8); /* Light white color for description */
+  text-align: center;
+  margin-bottom: 2.5rem; /* Adjust margin as needed */
+}
+
+.carousel-container {
+  height: 900px; /* Default height for larger screens */
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.carousel-track {
+  display: flex;
+  flex-direction: column;
+  animation: scrollUp 20s linear infinite;
+}
+
+.carousel-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scrollUp {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.carousel-track-down {
+  display: flex;
+  flex-direction: column;
+  animation: scrollDown 40s linear infinite;
+}
+
+.carousel-track-down:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scrollDown {
+  0% {
+    transform: translateY(-50%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .image-carousel-3d-section .section-title {
+    font-size: 2.75rem; /* Adjust font size for medium screens */
+  }
+
+  .carousel-container {
+    height: 600px; /* Adjust height for medium screens */
+  }
+}
+
+@media (max-width: 576px) {
+  .image-carousel-3d-section .section-title {
+    font-size: 2.25rem; /* Adjust font size for small screens */
+  }
+
+  .carousel-container {
+    height: 400px; /* Adjust height for small screens */
+  }
+}

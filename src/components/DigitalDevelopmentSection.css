@@ -1,0 +1,94 @@
+.digital-development-section {
+  background-color: white; /* Assuming a white background based on the image */
+  padding: 4rem 0; /* Adjust padding as needed */
+}
+
+.digital-development-container {
+  display: grid;
+  grid-template-columns: 1fr; /* Single column by default for small screens */
+  gap: 3rem; /* Adjust gap as needed */
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .digital-development-container {
+    grid-template-columns: 1fr 1fr; /* Two columns on medium and larger screens */
+  }
+}
+
+.digital-development-content h3 {
+  font-size: 2.5rem; /* Adjust font size as needed */
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: var(--color-gray-900); /* Adjust color as needed */
+}
+
+.digital-development-content p {
+  font-size: 1.125rem; /* Adjust font size as needed */
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  color: var(--color-gray-700); /* Adjust color as needed */
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Single column by default */
+  gap: 1.5rem; /* Adjust gap as needed */
+}
+
+@media (min-width: 576px) {
+  .features-grid {
+    grid-template-columns: 1fr 1fr; /* Two columns on small and larger screens */
+  }
+}
+
+.feature-card {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-gray-200);
+  display: flex;
+  align-items: flex-start;
+}
+
+.feature-card .icon {
+  color: var(--color-primary-600); /* Adjust icon color as needed */
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.feature-card h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--color-gray-900);
+}
+
+.feature-card p {
+  font-size: 0.9375rem;
+  color: var(--color-gray-600);
+  line-height: 1.5;
+}
+
+.animation-container {
+  /* Styles for the Lottie animation container */
+  width: 100%;
+  max-width: 700px; /* Adjust max-width as needed */
+  height: 700px; /* Adjust height as needed */
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Responsive adjustments for animation container */
+@media (max-width: 768px) {
+  .animation-container {
+    height: 400px; /* Adjust height for medium screens */
+  }
+}
+
+@media (max-width: 576px) {
+  .animation-container {
+    height: 300px; /* Adjust height for small screens */
+  }
+}

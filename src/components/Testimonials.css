@@ -1,0 +1,182 @@
+.testimonials-section {
+  background-color: white;
+}
+
+.testimonials-slider {
+  position: relative;
+  margin: 3rem 0 2rem;
+  display: flex;
+  align-items: center;
+}
+
+.slider-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: white;
+  border: 1px solid var(--color-gray-200);
+  color: var(--color-primary-600);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.slider-arrow:hover {
+  background-color: var(--color-primary-50);
+  border-color: var(--color-primary-200);
+  transform: translateY(-2px);
+}
+
+.slider-arrow.prev {
+  margin-right: 1rem;
+}
+
+.slider-arrow.next {
+  margin-left: 1rem;
+}
+
+.testimonials-wrapper { /* New style for the wrapper */
+  flex: 1;
+  overflow: hidden;
+  margin: 0 1rem; /* Optional: if arrows are outside and you want space */
+}
+
+.testimonials-container {
+  display: flex;
+  transition: transform 0.5s ease;
+  /* Width should be total number of cards * 100% / cardsPerPage.
+     Since cardsPerPage is 3, and we want each card to be 1/3 of the wrapper,
+     the container itself will hold all cards. The transform handles the sliding.
+     If we have 6 cards, this container will be 6 * (100/3)% wide = 200% of the wrapper.
+     No, this is simpler: the container's width should be (total_cards / cards_per_page) * 100%
+     of the wrapper if we were paginating the container.
+     Actually, the container should be wide enough to hold ALL cards.
+     If each card is 1/3 of the wrapper, and we have N cards, then total width is N * (100/3)%.
+     Example: 6 cards, each 1/3 of wrapper. Container width = 6 * 33.33% = 200% of wrapper.
+  */
+   /* Width should be total number of cards * (100% / cardsPerPage).
+      If 6 cards and 4 per page, container width = 6 * (100%/4) = 6 * 25% = 150% of the wrapper.
+      This allows all cards to be laid out in a single row.
+   */
+   width: calc(var(--total-cards, 6) * (100% / var(--cards-per-page, 4))); /* Defaulting to 6 total cards, 4 per page */
+   /* For 6 testimonials and 4 cards per page, this is 6 * 25% = 150% */
+}
+
+.testimonial-card {
+  flex-shrink: 0;
+  flex-grow: 0;
+  /* Each card should be 1/4th of the .testimonials-wrapper's width.
+     So, flex-basis is 25%.
+     The margin will create space between cards.
+  */
+  flex-basis: calc(25% - 1rem); /* 25% minus the horizontal margins (0.5rem left + 0.5rem right) */
+  box-sizing: border-box;
+  padding: 2rem; /* Internal padding for content */
+  margin: 0 0.5rem; /* Creates 0.5rem margin on left & right, for a 1rem total gap between cards */
+  background-color: var(--color-gray-50);
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+}
+
+/* Removed .testimonial-card:last-child rule as symmetrical margins handle spacing. */
+
+.testimonial-rating {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.testimonial-quote {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--color-gray-700);
+  font-style: italic;
+  margin-bottom: 2rem;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+}
+
+.author-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 1rem;
+  border: 3px solid white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.author-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--color-gray-900);
+}
+
+.author-title {
+  font-size: 0.875rem;
+  color: var(--color-gray-500);
+}
+
+.testimonial-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--color-gray-200);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dot.active {
+  background-color: var(--color-primary-600);
+  transform: scale(1.2);
+}
+
+@media (max-width: 768px) {
+  .slider-arrow {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .testimonial-quote {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .testimonials-slider {
+    margin: 2rem 0 1rem;
+  }
+  
+  .testimonial-card {
+    padding: 1.5rem;
+  }
+  
+  .author-image {
+    width: 48px;
+    height: 48px;
+  }
+}
+.company-logo {
+  max-height: 40px; /* Adjust as needed */
+  margin-bottom: 10px; /* Adds space below the logo */
+  display: block; /* Ensures margin-bottom works as expected */
+  margin-left: auto; /* Centers the logo if its container is wider */
+  margin-right: auto; /* Centers the logo if its container is wider */
+}
