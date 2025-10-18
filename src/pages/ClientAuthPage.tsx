@@ -29,8 +29,8 @@ const ClientAuthPage = () => {
                 email,
                 password,
                 options: {
-                    emailRedirectTo: `${window.location.origin}/client-dashboard`,
-                },
+                emailRedirectTo: `https://ucpmaroc.vercel.app/client-dashboard`, // <-- Change to your domain                
+            },
             });
 
             if (signUpError) {

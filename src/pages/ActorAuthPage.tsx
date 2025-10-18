@@ -42,7 +42,7 @@ const ActorAuthPage = () => {
             email,
             password,
             options: {
-                emailRedirectTo: `${window.location.origin}/actor-auth`,
+            emailRedirectTo: `https://ucpmaroc.vercel.app/actor-auth`, // <-- Change to your domain            
             },
         });
 
