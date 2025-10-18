@@ -18,6 +18,13 @@ import CustomizedPackages from './pages/CustomizedPackages.tsx';
 import SoftwareServicesPage from './pages/SoftwareDev.tsx'
 import VoiceOverLandingPage from './pages/VoiceOverLandingPage'
 import MarketingServices from './pages/MarketingServices'
+import ActorProfilePage from './pages/ActorProfilePage';
+import ActorAuthPage from './pages/ActorAuthPage.tsx';
+import ActorDashboardPage from './pages/ActorDashboardPage';
+import ClientOrderPage from './pages/ClientOrderPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import ClientAuthPage from './pages/ClientAuthPage';
+import ClientDashboardPage from './pages/ClientDashboardPage';
 
 function App() {
   useEffect(() => {
@@ -28,6 +35,7 @@ function App() {
   return (
     <Router>
       <Navbar />
+      <main className="flex-grow pt-24">
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/members" element={<MembersPage />} /> {/* Add route for Members Page */}
@@ -43,7 +51,15 @@ function App() {
         <Route path="/software-development" element={<SoftwareServicesPage />} />
         <Route path="/digital-marketing" element={<MarketingServices />} />
         <Route path="/voiceover" element={<VoiceOverLandingPage />} />
+        <Route path="/actor/:actorName" element={<ActorProfilePage />} />
+        <Route path="/actor-auth" element={<ActorAuthPage />} />
+        <Route path="/dashboard" element={<ActorDashboardPage />} />
+        <Route path="/order/:orderId" element={<ClientOrderPage />} />
+        <Route path="/admin" element={<AdminDashboardPage />} />
+        <Route path="/client-auth" element={<ClientAuthPage />} />
+        <Route path="/client-dashboard" element={<ClientDashboardPage />} />
       </Routes>
+      </main>
       <Footer />
     </Router>
   );
