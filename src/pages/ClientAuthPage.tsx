@@ -29,7 +29,7 @@ const ClientAuthPage = () => {
                 email,
                 password,
                 options: {
-                emailRedirectTo: `https://ucpmaroc.vercel.app/client-dashboard`, // <-- Change to your domain                
+                emailRedirectTo: `https://www.ucpmaroc.com/client-dashboard`, // <-- Change to your domain                
             },
             });
 
