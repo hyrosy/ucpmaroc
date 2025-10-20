@@ -19,12 +19,16 @@ import SoftwareServicesPage from './pages/SoftwareDev.tsx'
 import VoiceOverLandingPage from './pages/VoiceOverLandingPage'
 import MarketingServices from './pages/MarketingServices'
 import ActorProfilePage from './pages/ActorProfilePage';
-import ActorAuthPage from './pages/ActorAuthPage.tsx';
+// import ActorAuthPage from './pages/ActorAuthPage.tsx';
 import ActorDashboardPage from './pages/ActorDashboardPage';
 import ClientOrderPage from './pages/ClientOrderPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import ClientAuthPage from './pages/ClientAuthPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
+import ActorLoginPage from './pages/ActorLoginPage';
+import ActorSignUpPage from './pages/ActorSignUpPage';
+
+
 
 function App() {
   useEffect(() => {
@@ -52,12 +56,14 @@ function App() {
         <Route path="/digital-marketing" element={<MarketingServices />} />
         <Route path="/voiceover" element={<VoiceOverLandingPage />} />
         <Route path="/actor/:actorName" element={<ActorProfilePage />} />
-        <Route path="/actor-auth" element={<ActorAuthPage />} />
         <Route path="/dashboard" element={<ActorDashboardPage />} />
         <Route path="/order/:orderId" element={<ClientOrderPage />} />
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/client-auth" element={<ClientAuthPage />} />
         <Route path="/client-dashboard" element={<ClientDashboardPage />} />
+        <Route path="/actor-login" element={<ActorLoginPage />} />
+        <Route path="/actor-signup" element={<ActorSignUpPage />} />
+
       </Routes>
       </main>
       <Footer />

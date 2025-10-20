@@ -1,14 +1,19 @@
 // In src/components/QuoteCalculatorModal.tsx
 
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react'; // Keep the X icon import
-import { Link } from 'react-router-dom'; // Add the correct Link for navigationimport emailjs from '@emailjs/browser';
-import { supabase } from '../supabaseClient'; // Import the Supabase client
+import { X } from 'lucide-react'; // Correct: Only import the icon
+import { Link } from 'react-router-dom'; // Correct: Import Link from the router
 import emailjs from '@emailjs/browser';
+import { supabase } from '../supabaseClient';
+import StripeCheckoutForm from './StripeCheckoutForm';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface Actor {
-  id: string; // Add this line
-  ActorEmail: any;
+  id: string;
+  ActorEmail: string;
   ActorName: string;
   BaseRate_per_Word: string;
   WebMultiplier: string;
@@ -21,19 +26,16 @@ interface ModalProps {
 }
 
 const QuoteCalculatorModal: React.FC<ModalProps> = ({ actor, onClose }) => {
-  // Step 1: State Management for the Multi-Step Form
   const [step, setStep] = useState(1);
   const [status, setStatus] = useState('');
-
-  // Step 2: State for Quote Details
   const [scriptText, setScriptText] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [usage, setUsage] = useState('web');
-  const [videoSync, setVideoSync] = useState(false); // Upsell state
+  const [videoSync, setVideoSync] = useState(false);
   const [totalPrice, setTotalPrice] = useState(0);
-  // --- NEW: State to hold the ID of the created order ---
-    const [newOrderId, setNewOrderId] = useState<string | null>(null);
-  // Step 3: State for Client Information
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'bank' | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [newOrderId, setNewOrderId] = useState<string | null>(null);
   const [clientInfo, setClientInfo] = useState({
     name: '',
     email: '',
@@ -43,108 +45,128 @@ const QuoteCalculatorModal: React.FC<ModalProps> = ({ actor, onClose }) => {
 
   const orderId = `VO-${Date.now()}`;
 
-  // Effect to auto-count words from the script text area
   useEffect(() => {
     const words = scriptText.trim().split(/\s+/).filter(Boolean);
     setWordCount(words.length);
   }, [scriptText]);
 
-  // Effect to recalculate the total price whenever a variable changes
   useEffect(() => {
     const baseRate = parseFloat(actor.BaseRate_per_Word) || 0;
     const webMultiplier = parseFloat(actor.WebMultiplier) || 1;
     const broadcastMultiplier = parseFloat(actor.BroadcastMultiplier) || 1;
-    const videoSyncFee = 500; // Example fee in MAD for video sync
+    const videoSyncFee = 500;
 
     const basePrice = wordCount * baseRate;
     const usagePrice = basePrice * (usage === 'web' ? webMultiplier : broadcastMultiplier);
     const finalPrice = usagePrice + (videoSync ? videoSyncFee : 0);
-
     setTotalPrice(finalPrice);
   }, [wordCount, usage, videoSync, actor]);
 
   const handleClientInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setClientInfo({ ...clientInfo, [e.target.name]: e.target.value });
   };
-  
-  const handleSubmitOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus('Sending your order...');
-    setStep(4); // Move to the confirmation/loading view
-try {
-            // This is the key part: .select().single() returns the newly created order object
-            const { data: newOrder, error: orderError } = await supabase
-                .from('orders')
-                .insert({
-                    order_id_string: orderId,
-                    actor_id: actor.id,
-                    client_name: clientInfo.name,
-                    client_email: clientInfo.email,
-                    word_count: wordCount,
-                    usage: usage,
-                    total_price: totalPrice,
-                    script: scriptText,
-                    status: 'Awaiting Payment'
-                })
-                .select()
-                .single();
 
-        if (orderError) throw orderError;
-        // --- NEW: Save the new order's UUID to state ---
-            if (newOrder) {
-                setNewOrderId(newOrder.id);
-            }
-
-    // 1. Admin/Actor Email Parameters (includes everything)
-    const adminParams = {
-        orderId,
-        actorName: actor.ActorName,
-        actorEmail: actor.ActorEmail, // The new field for the CC
-        wordCount,
-        usage,
-        videoSync: videoSync ? 'Yes' : 'No',
-        totalPrice: totalPrice.toFixed(2),
-        clientName: clientInfo.name,
-        clientEmail: clientInfo.email,
-        clientPhone: clientInfo.phone,
-        clientCompany: clientInfo.company,
+  const createOrderInSupabase = async (method: 'stripe' | 'bank', paymentIntentId: string | null = null) => {
+    const { data: newOrder, error } = await supabase
+      .from('orders')
+      .insert({
+        order_id_string: orderId,
+        actor_id: actor.id,
+        client_name: clientInfo.name,
+        client_email: clientInfo.email,
+        word_count: wordCount,
+        usage: usage,
+        total_price: totalPrice,
         script: scriptText,
-    };
+        payment_method: method,
+        stripe_payment_intent_id: paymentIntentId,
+        status: method === 'stripe' ? 'In Progress' : 'Awaiting Payment',
+      })
+      .select()
+      .single();
+      
+    if (error) throw error;
+    if (newOrder) setNewOrderId(newOrder.id);
+    return newOrder;
+  };
 
-    // 2. Client Confirmation Email Parameters (simpler version)
-    const clientParams = {
-            orderId: newOrder.order_id_string, // The human-readable ID
-            order_uuid: newOrder.id, // The secure UUID for the link
-            actorName: actor.ActorName,
-            totalPrice: totalPrice.toFixed(2),
-            clientName: clientInfo.name,
-            clientEmail: clientInfo.email,    };
+  const sendEmails = async (newOrder: any) => {
+    try {
+      const adminParams = {
+          orderId,
+          actorName: actor.ActorName,
+          actorEmail: actor.ActorEmail,
+          wordCount,
+          usage,
+          videoSync: videoSync ? 'Yes' : 'No',
+          totalPrice: totalPrice.toFixed(2),
+          clientName: clientInfo.name,
+          clientEmail: clientInfo.email,
+          clientPhone: clientInfo.phone,
+          clientCompany: clientInfo.company,
+          script: scriptText,
+      };
 
-        // 3. Send the first email to Admin (and CC to Actor)
-        await emailjs.send(
-            'service_r3pvt1s',
-            'template_o4hehdi', // Use the Admin template ID
-            adminParams,
-            'I51tDIHsXYKncMQpO'
-        );
+      const clientParams = {
+          orderId: newOrder.order_id_string,
+          order_uuid: newOrder.id,
+          actorName: actor.ActorName,
+          totalPrice: totalPrice.toFixed(2),
+          clientName: clientInfo.name,
+          clientEmail: clientInfo.email,
+      };
 
-        // 4. Send the second email to the Client
-        await emailjs.send(
-            'service_r3pvt1s',
-            'template_shq9k38', // Use the new Client template ID
-            clientParams,
-            'I51tDIHsXYKncMQpO'
-        );
-
-        // If both emails send successfully:
-        setStatus('Order Confirmed!');
-
-    } catch (err) {
-        console.log('FAILED...', err);
-        setStatus('An error occurred. Please contact us directly.');
+      // Remember to replace placeholders with your actual EmailJS keys
+      await emailjs.send('YOUR_SERVICE_ID', 'YOUR_ADMIN_TEMPLATE_ID', adminParams, 'YOUR_PUBLIC_KEY');
+      await emailjs.send('YOUR_SERVICE_ID', 'YOUR_CLIENT_TEMPLATE_ID', clientParams, 'YOUR_PUBLIC_KEY');
+    } catch (error) {
+      // This is important: we log the error but don't stop the process.
+      console.error("Email sending failed, but order was created:", error);
     }
-};
+  };
 
+  const handleConfirmation = async () => {
+    if (!paymentMethod) return;
+    setStep(5);
+    if (paymentMethod === 'stripe') {
+      try {
+        setStatus('Preparing secure payment...');
+        const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+          body: { amount: totalPrice },
+        });
+        if (error) throw new Error(error.message);
+        setClientSecret(data.client_secret);
+        setStatus('');
+      } catch (error) {
+        const err = error as Error;
+        setStatus(`Error: ${err.message}`);
+      }
+    }
+  };
+
+  const onSuccessfulPayment = async (intentId: string) => {
+    try {
+        const newOrder = await createOrderInSupabase('stripe', intentId);
+        await sendEmails(newOrder);
+        setStatus('Payment Successful! Your order is now In Progress.');
+    } catch (err) {
+        const error = err as Error;
+        console.log('FAILED...', error);
+        setStatus(`An error occurred: ${error.message}`);
+    }
+  };
+
+  const onBankTransferSelect = async () => {
+    try {
+        const newOrder = await createOrderInSupabase('bank');
+        await sendEmails(newOrder);
+        setStatus('Order Confirmed!');
+    } catch (err) {
+        const error = err as Error;
+        console.log('FAILED...', error);
+        setStatus(`An error occurred: ${error.message}`);
+    }
+  };
   const renderStep = () => {
     switch (step) {
       // Step 1: Word Count & Usage
@@ -192,53 +214,91 @@ try {
       // Step 3: Client Information
       case 3:
         return (
-          <div>
-            <h2 className="text-3xl font-bold text-center mb-8">Step 3: Your Details</h2>
-            <form onSubmit={handleSubmitOrder} className="space-y-4">
-              <input type="text" name="name" placeholder="Full Name" required onChange={handleClientInfoChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-3" />
-              <input type="email" name="email" placeholder="Email Address" required onChange={handleClientInfoChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-3" />
-              <input type="tel" name="phone" placeholder="Phone Number" required onChange={handleClientInfoChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-3" />
-              <input type="text" name="company" placeholder="Company Name (Optional)" onChange={handleClientInfoChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-3" />
-              <div className="flex gap-4 mt-4">
-                <button type="button" onClick={() => setStep(2)} className="w-full px-8 py-4 bg-slate-600 rounded-full text-white font-semibold">Back</button>
-                <button type="submit" className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full text-white font-semibold">Confirm Order</button>
-              </div>
-            </form>
-          </div>
+            <div>
+                <h2 className="text-3xl font-bold text-center mb-8">Step 3: Your Details</h2>
+                <form onSubmit={(e) => { e.preventDefault(); setStep(4); }} className="space-y-4">
+                    <input type="text" name="name" placeholder="Full Name" required value={clientInfo.name} onChange={handleClientInfoChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-3" />
+                    <input type="email" name="email" placeholder="Email Address" required value={clientInfo.email} onChange={handleClientInfoChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-3" />
+                    <input type="tel" name="phone" placeholder="Phone Number" required value={clientInfo.phone} onChange={handleClientInfoChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-3" />
+                    <input type="text" name="company" placeholder="Company Name (Optional)" value={clientInfo.company} onChange={handleClientInfoChange} className="w-full bg-slate-700 border border-slate-600 rounded-lg p-3" />
+                    <div className="flex gap-4 mt-4">
+                        <button type="button" onClick={() => setStep(2)} className="w-full py-3 bg-slate-600 rounded-full font-semibold text-white">Back</button>
+                        <button type="submit" className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full font-semibold text-white">Proceed to Payment</button>
+                    </div>
+                </form>
+            </div>
         );
         
-      // Step 4: Final Confirmation
-      case 4:
-          return (
-                  <div className="text-center">
-                      <h2 className="text-3xl font-bold text-green-400 mb-4">{status}</h2>
-                      {status === 'Order Confirmed!' && (
-                          <div>
-                              <p className="text-slate-300 mb-6">Thank you! A confirmation email is on its way. You can also view your order now.</p>
-                              
-                              {/* --- NEW: View Order Button --- */}
-                              {newOrderId && (
-                                  <Link
-                                      to={`/order/${newOrderId}`}
-                                      className="inline-block w-full mb-6 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full text-white font-semibold text-lg shadow-lg hover:scale-105 transition-transform"
-                                  >
-                                      View Your Order
-                                  </Link>
-                              )}
-                     <div className="bg-slate-900 p-6 rounded-lg text-left">                    
-                      <p className="mb-2"><span className="font-bold">Order ID:</span> {orderId}</p>
-                      <p className="mb-4"><span className="font-bold">Amount Due:</span> {totalPrice.toFixed(2)} MAD</p>
-                      <h4 className="font-bold text-lg mb-2 border-t border-slate-700 pt-4">Bank Transfer Details:</h4>
-                      <p className="text-sm text-slate-400">Bank Name: Attijariwafa Bank</p>
-                      <p className="text-sm text-slate-400">Account Holder: UCPMAROC</p>
-                      <p className="text-sm text-slate-400">IBAN: MA64 0077 8000 0219 5000 0005 47</p>
-                      <p className="font-bold mt-4">IMPORTANT: Please use your Order ID as the payment reference.</p>
-                  </div>
+        case 4:
+        return (
+            <div>
+                <h2 className="text-3xl font-bold text-center mb-8">Step 4: Payment Method</h2>
+                <div className="space-y-4">
+                    <button onClick={() => setPaymentMethod('stripe')} className={`w-full p-4 border rounded-lg text-left transition ${paymentMethod === 'stripe' ? 'border-purple-500 bg-purple-900/50' : 'border-slate-600'}`}>
+                        <h3 className="font-bold text-white">Pay by Card (Stripe)</h3>
+                        <p className="text-sm text-slate-400">Securely pay with your credit/debit card.</p>
+                    </button>
+                    <button onClick={() => setPaymentMethod('bank')} className={`w-full p-4 border rounded-lg text-left transition ${paymentMethod === 'bank' ? 'border-purple-500 bg-purple-900/50' : 'border-slate-600'}`}>
+                        <h3 className="font-bold text-white">Bank Transfer</h3>
+                        <p className="text-sm text-slate-400">Receive payment details and pay manually.</p>
+                    </button>
                 </div>
-              )}
+                <div className="flex gap-4 mt-8">
+                    <button onClick={() => setStep(3)} className="w-full py-3 bg-slate-600 rounded-full font-semibold text-white">Back</button>
+                    <button onClick={handleConfirmation} disabled={!paymentMethod} className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full font-semibold text-white disabled:opacity-50">Confirm & Proceed</button>
+                </div>
             </div>
-          );
-
+        );
+      case 5:
+        if (paymentMethod === 'bank') {
+            if (!newOrderId && status === '') onBankTransferSelect();
+            return (
+                <div className="text-center">
+                    <h2 className="text-3xl font-bold text-green-400 mb-4">{status || 'Processing...'}</h2>
+                    {status === 'Order Confirmed!' && (
+                        <div>
+                            <p className="text-slate-300 mb-6">Thank you! A confirmation email is on its way. You can also view your order now.</p>
+                            {newOrderId && (
+                                <Link to={`/order/${newOrderId}`} className="inline-block w-full mb-6 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full text-white font-semibold text-lg shadow-lg hover:scale-105 transition-transform">
+                                    View Your Order
+                                </Link>
+                            )}
+                            <div className="bg-slate-900 p-6 rounded-lg text-left">
+                                <p className="mb-2"><span className="font-bold">Order ID:</span> {orderId}</p>
+                                <p className="mb-4"><span className="font-bold">Amount Due:</span> {totalPrice.toFixed(2)} MAD</p>
+                                <h4 className="font-bold text-lg mb-2 border-t border-slate-700 pt-4">Bank Transfer Details:</h4>
+                                <p className="text-sm text-slate-400">Bank Name: Attijariwafa Bank</p>
+                                <p className="text-sm text-slate-400">Account Holder: UCPMAROC</p>
+                                <p className="text-sm text-slate-400">IBAN: MA64 0077 8000 0219 5000 0005 47</p>
+                                <p className="font-bold mt-4">IMPORTANT: Please use your Order ID as the payment reference.</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        if (paymentMethod === 'stripe' && clientSecret) {
+            return (
+                <div>
+                    <h2 className="text-3xl font-bold text-center mb-4">{status || 'Complete Your Payment'}</h2>
+                    {status === 'Payment Successful! Your order is now In Progress.' ? (
+                        <div className="text-center">
+                            <p className="text-slate-300 mb-6">Thank you! Your payment was successful. A confirmation email is on its way.</p>
+                            {newOrderId && (
+                                <Link to={`/order/${newOrderId}`} className="inline-block w-full mb-6 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full text-white font-semibold text-lg shadow-lg hover:scale-105 transition-transform">
+                                    View Your Order
+                                </Link>
+                            )}
+                        </div>
+                    ) : (
+                        <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night' } }}>
+                            <StripeCheckoutForm onSuccessfulPayment={onSuccessfulPayment} />
+                        </Elements>
+                    )}
+                </div>
+            );
+        }
+        return <div className="text-center text-white">{status || 'Loading Payment...'}</div>;
       default:
         return null;
     }
@@ -263,3 +323,4 @@ try {
 };
 
 export default QuoteCalculatorModal;
+

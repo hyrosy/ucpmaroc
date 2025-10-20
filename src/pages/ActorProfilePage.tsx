@@ -82,6 +82,34 @@ const ActorProfilePage = () => {
         }
     };
 
+
+    // --- NEW: Robust Share Function ---
+    const handleShare = async () => {
+        const shareData = {
+            title: `Voice Actor: ${actor?.ActorName}`,
+            text: `Check out the voice actor profile for ${actor?.ActorName}!`,
+            url: window.location.href,
+        };
+
+        // Use the modern Web Share API if available
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.error("Share failed:", err);
+            }
+        } else {
+            // Fallback for desktop browsers: copy to clipboard
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                alert('Profile link copied to clipboard!');
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy link.');
+            }
+        }
+    };
+    
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
@@ -103,20 +131,20 @@ const ActorProfilePage = () => {
             <audio ref={audioRef} src={currentTrackIndex !== null ? demos[currentTrackIndex]?.url : ''} />
             
             {/* --- NEW: Spotify-style Immersive Header --- */}
-            <header className="h-80 md:h-96 relative flex items-end p-8 bg-gradient-to-t from-slate-900 via-purple-900/50 to-purple-800">
-                <div className="flex flex-col md:flex-row items-center gap-6 z-10">
+            <header className="h-64 md:h-96 relative flex items-end p-4 md:p-8 bg-gradient-to-t from-slate-900 via-purple-900/50 to-purple-800">
+                <div className="flex flex-row items-center gap-4 md:gap-6 z-10 w-full">
                     <img 
                         src={actor.HeadshotURL} 
                         alt={actor.ActorName} 
-                        className="w-40 h-40 md:w-52 md:h-52 rounded-full object-cover shadow-2xl shadow-black/50"
+                        className="w-28 h-28 md:w-52 md:h-52 rounded-full object-cover flex-shrink-0 shadow-2xl shadow-black/50"
                     />
-                    <div className="text-center md:text-left">
-                        <div className="flex items-center justify-center md:justify-start gap-2">
-                            <CheckCircle size={24} className="text-blue-400" />
-                            <p className="font-semibold">Verified Voice Actor</p>
+                    <div className="text-left">
+                        <div className="flex items-center gap-2">
+                            <CheckCircle size={18} className="text-blue-400" />
+                            <p className="font-semibold text-sm">Verified Voice Actor</p>
                         </div>
-                        <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-white">{actor.ActorName}</h1>
-                        <p className="text-slate-300 mt-2">{actor.Language} | {actor.Gender}</p>
+                        <h1 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter text-white break-words">{actor.ActorName}</h1>
+                        <p className="text-slate-300 text-sm md:text-base mt-1 md:mt-2">{actor.Language} | {actor.Gender}</p>
                     </div>
                 </div>
             </header>
@@ -131,8 +159,8 @@ const ActorProfilePage = () => {
                     <button onClick={() => setIsQuoteModalOpen(true)} className="px-6 py-3 border-2 border-slate-600 hover:border-white rounded-full text-white font-bold text-sm transition">
                         Get a Quote
                     </button>
-                    {/* Optional Share button */}
-                    <button onClick={() => navigator.clipboard.writeText(window.location.href)} className="p-3 border-2 border-slate-600 hover:border-white rounded-full text-slate-300 hover:text-white transition">
+                    {/* UPDATED: Share button now uses the new function */}
+                    <button onClick={handleShare} className="p-3 border-2 border-slate-600 hover:border-white rounded-full text-slate-300 hover:text-white transition">
                         <Share2 size={18} />
                     </button>
                 </div>
@@ -140,15 +168,39 @@ const ActorProfilePage = () => {
                 {/* Demo Tracklist */}
                 <div className="mb-12">
                     <h2 className="text-2xl font-bold mb-4">Popular Demos</h2>
-                    {demos.map((demo, index) => (
-                        <div key={index} onClick={() => handlePlayPause(index)} className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 p-2 rounded-lg hover:bg-slate-800/50 cursor-pointer">
-                            <div className="text-slate-400 font-semibold w-8 text-center">
-                                {currentTrackIndex === index && isPlaying ? <Pause size={16} className="text-purple-400 mx-auto" /> : <span className="group-hover:hidden">{index + 1}</span>}
-                                {currentTrackIndex !== index && <Play size={16} className="text-white hidden group-hover:block mx-auto" />}
+                    <div className="flex flex-col">
+                        {demos.map((demo, index) => (
+                            <div
+                                key={index}
+                                onClick={() => handlePlayPause(index)}
+                                className="group grid grid-cols-[40px_1fr_auto] items-center gap-4 p-2 rounded-lg hover:bg-slate-800/50 cursor-pointer"
+                            >
+                                {/* 1. Track Number / Play/Pause Icon */}
+                                <div className="flex items-center justify-center text-slate-400">
+                                    {currentTrackIndex === index && isPlaying ? (
+                                        <Pause size={16} className="text-purple-400" />
+                                    ) : (
+                                        <>
+                                            <span className="group-hover:hidden">{index + 1}</span>
+                                            <Play size={16} className="text-white hidden group-hover:block" />
+                                        </>
+                                    )}
+                                </div>
+                                
+                                {/* 2. Track Title */}
+                                <div>
+                                    <p className={`font-semibold truncate ${currentTrackIndex === index ? 'text-purple-400' : 'text-white'}`}>
+                                        {demo.title}
+                                    </p>
+                                </div>
+                                
+                                {/* 3. (Optional) Duration - can be added later */}
+                                <div className="text-slate-400 text-sm">
+                                    {/* Example: 2:34 */}
+                                </div>
                             </div>
-                            <p className={`font-semibold truncate ${currentTrackIndex === index ? 'text-purple-400' : 'text-white'}`}>{demo.title}</p>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
 
                 {/* Bio Section */}

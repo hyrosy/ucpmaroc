@@ -32,6 +32,7 @@ interface Order {
   id: string;
   order_id_string: string;
   client_name: string;
+  client_email: string; // added to match OrderDetailsModal's expected type
   status: string;
   script: string;
   final_audio_url?: string;
@@ -134,7 +135,7 @@ const ActorDashboardPage = () => {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        navigate('/actor-auth');
+        navigate('/actor-login');
     };
 
 

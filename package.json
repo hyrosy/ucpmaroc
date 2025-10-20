@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
+    "@stripe/react-stripe-js": "^5.2.0",
+    "@stripe/stripe-js": "^8.1.0",
     "@supabase/supabase-js": "^2.75.1",
     "emailjs-com": "^3.2.0",
     "lottie-react": "^2.4.1",
