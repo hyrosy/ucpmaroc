@@ -1,51 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { Send, Mail, Phone, MapPin, Building2, CreditCard, Shield } from 'lucide-react';
-import ContactForm from '../components/ContactForm';
+import React, { useState } from 'react';
+import { Mail, Phone, MapPin, Building2, CreditCard, Shield, Send } from 'lucide-react';
+import emailjs from '@emailjs/browser';
 
+// --- Main Page Component ---
 const ContactUsPage = () => {
-  // Animated particles for background
-  interface Particle {
-    id: number;
-    x: number;
-    y: number;
-    size: number;
-    speedX: number;
-    speedY: number;
-  }
-  
-  const [particles, setParticles] = useState<Particle[]>([]);
 
-  useEffect(() => {
-    const generateParticles = () => {
-      const newParticles = [];
-      for (let i = 0; i < 30; i++) {
-        newParticles.push({
-          id: i,
-          x: Math.random() * 100,
-          y: Math.random() * 100,
-          size: Math.random() * 3 + 1,
-          speedX: (Math.random() - 0.5) * 0.3,
-          speedY: (Math.random() - 0.5) * 0.3,
-        });
-      }
-      setParticles(newParticles);
-    };
+  const [formState, setFormState] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    message: ''
+  });
+  const [status, setStatus] = useState('');
 
-    generateParticles();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormState(prev => ({ ...prev, [name]: value }));
+  };
 
-    const animateParticles = () => {
-      setParticles(prev =>
-        prev.map(particle => ({
-          ...particle,
-          x: (particle.x + particle.speedX + 100) % 100,
-          y: (particle.y + particle.speedY + 100) % 100,
-        }))
-      );
-    };
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('Sending...');
 
-    const interval = setInterval(animateParticles, 100);
-    return () => clearInterval(interval);
-  }, []);
+    // Replace with your actual EmailJS Service ID, Template ID, and Public Key
+    emailjs.send(
+      'YOUR_SERVICE_ID', 
+      'YOUR_TEMPLATE_ID', 
+      {
+        from_name: `${formState.firstName} ${formState.lastName}`,
+        to_name: "UCPMAROC Admin",
+        from_email: formState.email,
+        message: formState.message,
+      }, 
+      'YOUR_PUBLIC_KEY'
+    ).then((result) => {
+        console.log(result.text);
+        setStatus('Message Sent Successfully!');
+        setFormState({ firstName: '', lastName: '', email: '', message: '' }); // Clear form
+    }, (error) => {
+        console.log(error.text);
+        setStatus('Failed to send message. Please try again.');
+    });
+  };
 
   const companyInfo = [
     {
@@ -71,111 +67,76 @@ const ContactUsPage = () => {
   ];
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
-      {/* Animated Background */}
-      <div className="absolute inset-0">
-        {/* Gradient Orbs */}
-        <div className="absolute top-20 left-20 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-96 h-96 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-40 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse animation-delay-4000"></div>
+    <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
+      <div className="container mx-auto px-4 py-16 md:py-24">
         
-        {/* Floating Particles */}
-        {particles.map(particle => (
-          <div
-            key={particle.id}
-            className="absolute bg-white rounded-full opacity-20"
-            style={{
-              left: `${particle.x}%`,
-              top: `${particle.y}%`,
-              width: `${particle.size}px`,
-              height: `${particle.size}px`,
-              transition: 'all 0.1s linear',
-            }}
-          />
-        ))}
-        
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="h-full w-full" style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px'
-          }} />
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
-        <div className="w-full max-w-7xl mx-auto">
+        {/* Main Grid Layout */}
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           
-          {/* Main Grid */}
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            
-            {/* Left Column - Info */}
-            <div className="space-y-8">
-              {/* Header */}
-              <div className="space-y-4">
-                <h1 className="text-5xl lg:text-6xl font-light text-white leading-tight">
-                  Get in <span className="font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Touch</span>
-                </h1>
-                <p className="text-xl text-gray-300 leading-relaxed max-w-lg">
-                  Ready to start your journey? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
-                </p>
-              </div>
+          {/* Left Column - Info */}
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="space-y-2">
+              <h1 className="text-4xl md:text-5xl font-black tracking-tighter">
+                Get in <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Touch</span>
+              </h1>
+              <p className="text-md text-slate-400 max-w-lg">
+                Ready to start your journey? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+              </p>
+            </div>
 
-              {/* Company Info Cards */}
-              <div className="grid gap-4">
-                {companyInfo.map((info, index) => (
-                  <div key={index} className="backdrop-blur-sm bg-white/5 rounded-2xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group">
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0 p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl group-hover:from-purple-500/30 group-hover:to-pink-500/30 transition-all duration-300">
-                        <info.icon className="w-6 h-6 text-purple-300" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-white mb-1">{info.title}</h3>
-                        <p className="text-gray-300 text-sm leading-relaxed">{info.description}</p>
-                      </div>
-                    </div>
+            {/* Company Info Cards */}
+            <div className="space-y-3">
+              {companyInfo.map((info, index) => (
+                <div key={index} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex items-center space-x-4">
+                  <div className="flex-shrink-0 p-3 bg-slate-700 rounded-lg">
+                    <info.icon className="w-5 h-5 text-purple-400" />
                   </div>
-                ))}
-              </div>
-
-              {/* Copyright */}
-              
+                  <div>
+                    <h3 className="font-semibold text-white">{info.title}</h3>
+                    <p className="text-slate-400 text-sm">{info.description}</p>
+                  </div>
+                </div>
+              ))}
             </div>
+          </div>
 
-            {/* Right Column - Form */}
-            <div className="lg:pl-8">
-              <ContactForm />
-            </div>
+          {/* Right Column - Form */}
+          <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700">
+             <h2 className="text-2xl font-bold mb-6 text-white">Send a Message</h2>
+             <form onSubmit={handleFormSubmit} className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label htmlFor="firstName" className="block text-sm font-medium text-slate-300 mb-2">First Name</label>
+                        <input type="text" name="firstName" id="firstName" value={formState.firstName} onChange={handleInputChange} required className="w-full p-3 bg-slate-700 border border-slate-600 rounded-md focus:ring-purple-500 focus:border-purple-500"/>
+                    </div>
+                    <div>
+                        <label htmlFor="lastName" className="block text-sm font-medium text-slate-300 mb-2">Last Name</label>
+                        <input type="text" name="lastName" id="lastName" value={formState.lastName} onChange={handleInputChange} required className="w-full p-3 bg-slate-700 border border-slate-600 rounded-md focus:ring-purple-500 focus:border-purple-500"/>
+                    </div>
+                </div>
+                <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                    <input type="email" name="email" id="email" value={formState.email} onChange={handleInputChange} required className="w-full p-3 bg-slate-700 border border-slate-600 rounded-md focus:ring-purple-500 focus:border-purple-500"/>
+                </div>
+                <div>
+                    <label htmlFor="message" className="block text-sm font-medium text-slate-300 mb-2">Message</label>
+                    <textarea name="message" id="message" rows={4} value={formState.message} onChange={handleInputChange} required className="w-full p-3 bg-slate-700 border border-slate-600 rounded-md focus:ring-purple-500 focus:border-purple-500"></textarea>
+                </div>
+                <div>
+                    <button type="submit" disabled={status === 'Sending...'} className="w-full group flex items-center justify-center gap-2 py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-full hover:shadow-lg hover:shadow-purple-500/30 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                        {status === 'Sending...' ? 'Sending...' : 'Send Message'}
+                        <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                </div>
+             </form>
+             {status && <p className={`mt-4 text-center text-sm ${status.includes('Failed') ? 'text-red-400' : 'text-green-400'}`}>{status}</p>}
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
     </div>
   );
 };
 
 export default ContactUsPage;
+

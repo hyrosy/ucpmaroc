@@ -130,28 +130,29 @@ const ActorProfilePage = () => {
         <div className="min-h-screen bg-slate-900 text-white">
             <audio ref={audioRef} src={currentTrackIndex !== null ? demos[currentTrackIndex]?.url : ''} />
             
-            {/* --- NEW: Spotify-style Immersive Header --- */}
-            <header className="h-64 md:h-96 relative flex items-end p-4 md:p-8 bg-gradient-to-t from-slate-900 via-purple-900/50 to-purple-800">
-                <div className="flex flex-row items-center gap-4 md:gap-6 z-10 w-full">
-                    <img 
-                        src={actor.HeadshotURL} 
-                        alt={actor.ActorName} 
-                        className="w-28 h-28 md:w-52 md:h-52 rounded-full object-cover flex-shrink-0 shadow-2xl shadow-black/50"
-                    />
-                    <div className="text-left">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle size={18} className="text-blue-400" />
-                            <p className="font-semibold text-sm">Verified Voice Actor</p>
+            <header className="h-auto md:h-96 relative flex items-end bg-gradient-to-t from-slate-900 via-purple-900/50 to-purple-800">
+                {/* --- NEW: Added a max-width container with padding --- */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8">
+                    <div className="flex flex-row items-center gap-4 md:gap-8 z-10 w-full">
+                        <img 
+                            src={actor.HeadshotURL} 
+                            alt={actor.ActorName} 
+                            className="w-28 h-28 md:w-52 md:h-52 rounded-full object-cover flex-shrink-0 shadow-2xl shadow-black/50"
+                        />
+                        <div className="text-left flex-grow">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle size={18} className="text-blue-400" />
+                                <p className="font-semibold text-sm">Verified Voice Actor</p>
+                            </div>
+                            <h1 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter text-white break-words">{actor.ActorName}</h1>
+                            <p className="text-slate-300 text-sm md:text-base mt-1 md:mt-2">{actor.Language} | {actor.Gender}</p>
                         </div>
-                        <h1 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter text-white break-words">{actor.ActorName}</h1>
-                        <p className="text-slate-300 text-sm md:text-base mt-1 md:mt-2">{actor.Language} | {actor.Gender}</p>
                     </div>
                 </div>
             </header>
 
-            {/* --- NEW: Main Content Area with Actions and Tracklist --- */}
-            <main className="p-8">
-                {/* Main Action Buttons */}
+            {/* --- NEW: Added a max-width container with padding --- */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex items-center gap-6 mb-12">
                     <button onClick={() => handlePlayPause()} className="w-16 h-16 bg-purple-600 hover:bg-purple-500 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105">
                         {isPlaying ? <Pause size={32} /> : <Play size={32} className="ml-1" />}
@@ -159,7 +160,6 @@ const ActorProfilePage = () => {
                     <button onClick={() => setIsQuoteModalOpen(true)} className="px-6 py-3 border-2 border-slate-600 hover:border-white rounded-full text-white font-bold text-sm transition">
                         Get a Quote
                     </button>
-                    {/* UPDATED: Share button now uses the new function */}
                     <button onClick={handleShare} className="p-3 border-2 border-slate-600 hover:border-white rounded-full text-slate-300 hover:text-white transition">
                         <Share2 size={18} />
                     </button>
