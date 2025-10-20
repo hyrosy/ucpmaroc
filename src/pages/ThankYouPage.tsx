@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowLeft, Calendar, Clock } from 'lucide-react';
-import './ThankYouPage.css';
 
 const ThankYouPage: React.FC = () => {
   useEffect(() => {

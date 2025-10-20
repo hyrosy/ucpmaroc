@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import emailjs from '@emailjs/browser'; // Import EmailJS
 import { ArrowLeft, ChevronRight, Shield } from 'lucide-react';
-import './OptInPage.css';
 
 const OptInPage: React.FC = () => {
   const { planId } = useParams<{ planId: string }>();

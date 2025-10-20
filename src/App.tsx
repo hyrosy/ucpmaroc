@@ -11,7 +11,6 @@ import PrivacyPolicyPage from './components/PrivacyPolicy.tsx';
 import ContactUsPage from './pages/ContactUsPage'; // Import the Contact Us page
 import TermsofService from './components/TermsofService.tsx';
 import TermsandConditions from './components/TermsandConditions.tsx';
-import './App.css';
 import MembersPage from './pages/Members'; // Import MembersPage if needed
 import CinematoGraphyPage from './pages/CenimatoGraphy.tsx';
 import CustomizedPackages from './pages/CustomizedPackages.tsx';
