@@ -117,8 +117,21 @@ const QuoteCalculatorModal: React.FC<ModalProps> = ({ actor, onClose }) => {
       };
 
       // Remember to replace placeholders with your actual EmailJS keys
-      await emailjs.send('YOUR_SERVICE_ID', 'YOUR_ADMIN_TEMPLATE_ID', adminParams, 'YOUR_PUBLIC_KEY');
-      await emailjs.send('YOUR_SERVICE_ID', 'YOUR_CLIENT_TEMPLATE_ID', clientParams, 'YOUR_PUBLIC_KEY');
+      await emailjs.send(
+            'service_r3pvt1s',
+            'template_o4hehdi', // Use the Admin template ID
+            adminParams,
+            'I51tDIHsXYKncMQpO'
+        );
+
+        // 4. Send the second email to the Client
+        await emailjs.send(
+            'service_r3pvt1s',
+            'template_shq9k38', // Use the new Client template ID
+            clientParams,
+            'I51tDIHsXYKncMQpO'
+        );
+
     } catch (error) {
       // This is important: we log the error but don't stop the process.
       console.error("Email sending failed, but order was created:", error);
@@ -364,4 +377,3 @@ const QuoteCalculatorModal: React.FC<ModalProps> = ({ actor, onClose }) => {
 };
 
 export default QuoteCalculatorModal;
-
