@@ -27,6 +27,7 @@ import ClientDashboardPage from './pages/ClientDashboardPage';
 import ActorLoginPage from './pages/ActorLoginPage';
 import ActorSignUpPage from './pages/ActorSignUpPage';
 import MyShortlistPage from './pages/MyShortlistPage';
+import ScrollToTop from './components/ScrollToTop'; // 1. Import the new component
 
 
 
@@ -39,6 +40,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <Navbar />
       <main className="flex-grow pt-24">
       <Routes>
