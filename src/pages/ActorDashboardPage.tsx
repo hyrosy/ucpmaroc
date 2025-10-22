@@ -4,11 +4,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import OrderDetailsModal from '../components/OrderDetailsModal'; // Import the modal
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Music, Trash2, UploadCloud } from 'lucide-react';
 // --- NEW: Define the controlled options for our dropdowns ---
 const genderOptions = ["Male", "Female", "Non-Binary"];
 const languageOptions = ["English (US)", "English (UK)", "Arabic (MSA)", "Arabic (Egyptian)", "French (France)", "Spanish (Spain)"];
 const tagOptions = ["Warm", "Deep", "Conversational", "Corporate", "Announcer", "Character", "Young Adult", "Senior"];
+
+// --- Interfaces ---
+interface Demo {
+  id: string;
+  title: string;
+  language: string;
+  style_tag: string;
+  demo_url: string;
+}
 
 // 1. Define clear, specific interfaces for our data
 interface Actor {
@@ -24,6 +33,7 @@ interface Actor {
   WebMultiplier: number;
   BroadcastMultiplier: number;
   HeadshotURL?: string;
+  MainDemoURL?: string;
   // Add other fields you need
 }
 
@@ -49,9 +59,20 @@ const ActorDashboardPage = () => {
     const navigate = useNavigate();
 // NEW: State to manage the collapsible profile section
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [uploading, setUploading] = useState(false);
 // --- NEW: State to manage the active tab ---
     const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
+
+    // --- NEW State for Demos ---
+        const [isDemosOpen, setIsDemosOpen] = useState(true); // Open by default
+        const [demos, setDemos] = useState<Demo[]>([]);
+        const [uploading, setUploading] = useState(false);
+        const [newDemo, setNewDemo] = useState({ title: '', language: '', style_tag: '' });
+        const [demoFile, setDemoFile] = useState<File | null>(null);
+        const [uploadingMainDemo, setUploadingMainDemo] = useState(false);
+        const [demoMessage, setDemoMessage] = useState('');
+
+
+
     // 3. A single, combined function to fetch all necessary data
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -74,6 +95,11 @@ const ActorDashboardPage = () => {
             setOrders(orderData as Order[]);
         }
         
+        // NEW: Fetch existing demos for this actor
+        const { data: demosData } = await supabase.from('demos').select('*').eq('actor_id', actorProfile.id).order('created_at', { ascending: false });
+        if(demosData) setDemos(demosData);
+
+
         setLoading(false);
     }, [navigate]);
 
@@ -81,6 +107,144 @@ const ActorDashboardPage = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    // --- NEW: Handlers for Demo Management ---
+    const handleDemoInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setNewDemo({ ...newDemo, [e.target.name]: e.target.value });
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setDemoFile(e.target.files[0]);
+        }
+    };
+
+    const handleDemoUpload = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!demoFile || !newDemo.title || !newDemo.language || !newDemo.style_tag || !actorData.id) {
+            setDemoMessage("Please fill all demo fields and select a file.");
+            return;
+        }
+        setUploading(true);
+        setDemoMessage("Uploading demo...");
+
+        try {
+            // --- THIS IS THE FIX ---
+            // 1. Get the original file extension (e.g., "mp3")
+            const fileExt = demoFile.name.split('.').pop();
+            // 2. Create a clean, unique name using a timestamp
+            const cleanFileName = `${Date.now()}.${fileExt}`;
+            // 3. Create the final, safe path
+            const filePath = `${actorData.id}/${cleanFileName}`;
+            // --- END OF FIX ---
+
+            // 2. Upload to 'demos' storage bucket with the new safe path
+            const { error: uploadError } = await supabase.storage.from('demos').upload(filePath, demoFile);
+            if (uploadError) throw uploadError;
+
+            // 3. Get the public URL
+            const { data: urlData } = supabase.storage.from('demos').getPublicUrl(filePath);
+            if (!urlData) throw new Error("Could not get public URL.");
+
+            // 4. Insert record into the 'demos' database table
+            const { data: newDemoData, error: insertError } = await supabase
+                .from('demos')
+                .insert({
+                    actor_id: actorData.id,
+                    demo_url: urlData.publicUrl,
+                    title: newDemo.title,
+                    language: newDemo.language,
+                    style_tag: newDemo.style_tag,
+                })
+                .select()
+                .single();
+
+            if (insertError) throw insertError;
+            
+            setDemos(prev => [newDemoData as Demo, ...prev]);
+            setNewDemo({ title: '', language: '', style_tag: '' });
+            setDemoFile(null);
+            (document.getElementById('demo-file-input') as HTMLInputElement).value = ""; // Reset file input
+            setDemoMessage("Demo uploaded successfully!");
+
+        } catch (error) {
+            const err = error as Error;
+            setDemoMessage(`Error: ${err.message}`);
+            console.error(err);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleMainDemoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !actorData.id) return;
+
+        try {
+            setUploadingMainDemo(true);
+            setMessage("Uploading main demo...");
+
+            // --- THIS IS THE FIX ---
+            // 1. Get the file extension
+            const fileExt = file.name.split('.').pop();
+            // 2. Create a clean, unique path *inside* the actor's personal folder
+            const filePath = `${actorData.id}/main-demo.${fileExt}`;
+            // --- END OF FIX ---
+
+            // We upload to the 'demos' bucket, as it's our public audio bucket
+            const { error: uploadError } = await supabase.storage
+                .from('demos')
+                .upload(filePath, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // Get the public URL with a cache-busting timestamp
+            const { data: urlData } = supabase.storage.from('demos').getPublicUrl(filePath);
+            const newDemoUrl = `${urlData.publicUrl}?t=${new Date().getTime()}`;
+
+            // Update the 'MainDemoURL' column in the 'actors' table
+            const { error: updateError } = await supabase
+                .from('actors')
+                .update({ MainDemoURL: newDemoUrl })
+                .eq('id', actorData.id);
+
+            if (updateError) throw updateError;
+            
+            setActorData(prev => ({ ...prev, MainDemoURL: newDemoUrl }));
+            setMessage("Main demo updated successfully!");
+
+        } catch (error) {
+            const err = error as Error;
+            setMessage(`Error: ${err.message}`);
+        } finally {
+            setUploadingMainDemo(false);
+        }
+    };
+
+
+    const handleDemoDelete = async (demoId: string, demoUrl: string) => {
+        if (!window.confirm("Are you sure you want to delete this demo?")) return;
+        
+        try {
+            // Extract file path from URL
+            const filePath = new URL(demoUrl).pathname.split('/demos/')[1];
+            
+            // Delete file from storage
+            const { error: storageError } = await supabase.storage.from('demos').remove([filePath]);
+            if(storageError) throw storageError;
+
+            // Delete record from database
+            const { error: dbError } = await supabase.from('demos').delete().eq('id', demoId);
+            if(dbError) throw dbError;
+
+            setDemos(prev => prev.filter(d => d.id !== demoId));
+            setMessage("Demo deleted successfully.");
+
+        } catch (error) {
+            const err = error as Error;
+            setMessage(`Error: ${err.message}`);
+        }
+    };
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -183,6 +347,8 @@ const ActorDashboardPage = () => {
             setUploading(false);
         }
     };
+    // duplicate handleMainDemoUpload removed — using the earlier handleMainDemoUpload implementation above
+
 
 
     if (loading && !selectedOrder) { // Only show full-page loader initially
@@ -347,6 +513,67 @@ const ActorDashboardPage = () => {
                     )}
                 </div>
 
+                {/* --- NEW: Manage Demos Section --- */}
+                <div className="bg-slate-800 rounded-lg border border-slate-700 mb-8">
+                    <button onClick={() => setIsDemosOpen(!isDemosOpen)} className="w-full flex justify-between items-center p-6">
+                        <h2 className="text-2xl font-bold text-white">Manage Your Demos</h2>
+                        {isDemosOpen ? <ChevronUp className="text-slate-400" /> : <ChevronDown className="text-slate-400" />}
+                    </button>
+
+                    {isDemosOpen && (
+                        <div className="p-6 pt-0 border-t border-slate-700">
+                            <div className="pt-6 mb-6 border-b border-slate-700 pb-6">
+                                <h3 className="text-lg font-semibold text-white">Your Main Demo (for your card)</h3>
+                                <p className="text-sm text-slate-400 mb-3">This is the primary audio sample clients hear on the main roster page.</p>
+                                {actorData.MainDemoURL && (
+                                    <audio controls src={actorData.MainDemoURL} className="w-full h-10 mb-2"></audio>
+                                )}
+                                <label htmlFor="main-demo-upload" className="cursor-pointer text-sm w-full inline-block text-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-md">
+                                    {uploadingMainDemo ? 'Uploading...' : 'Upload & Replace Main Demo'}
+                                </label>
+                                <input type="file" id="main-demo-upload" className="hidden" accept="audio/*" onChange={handleMainDemoUpload} disabled={uploadingMainDemo} />
+                            </div>
+                            {/* Upload Form */}
+                            <form onSubmit={handleDemoUpload} className="space-y-4 mb-8">
+                                <h3 className="text-lg font-semibold text-white pt-4">Upload New Demo</h3>
+                                <input type="text" name="title" placeholder="Demo Title (e.g., 'Corporate Narration')" value={newDemo.title} onChange={handleDemoInputChange} required className="w-full bg-slate-700 p-2 rounded-md" />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <select name="language" value={newDemo.language} onChange={handleDemoInputChange} required className="w-full bg-slate-700 p-2 rounded-md">
+                                        <option value="">Select Language...</option>
+                                        {languageOptions.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+                                    </select>
+                                    <select name="style_tag" value={newDemo.style_tag} onChange={handleDemoInputChange} required className="w-full bg-slate-700 p-2 rounded-md">
+                                        <option value="">Select Style...</option>
+                                        {tagOptions.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                                    </select>
+                                </div>
+                                <input type="file" accept="audio/*" onChange={handleFileChange} required className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
+                                <button type="submit" disabled={uploading} className="w-full py-2 bg-purple-600 rounded-md font-semibold disabled:opacity-50">{uploading ? 'Uploading...' : 'Upload Demo'}</button>
+                            </form>
+
+                            {/* Existing Demos List */}
+                            <h3 className="text-lg font-semibold text-white mb-4 border-t border-slate-700 pt-4">Your Uploaded Demos</h3>
+                            <div className="space-y-3">
+                                {demos.length > 0 ? demos.map(demo => (
+                                    <div key={demo.id} className="bg-slate-700/50 p-3 rounded-md flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Music size={16} className="text-slate-400" />
+                                            <div>
+                                                <p className="font-semibold text-white">{demo.title}</p>
+                                                <p className="text-xs text-slate-400">{demo.language} | {demo.style_tag}</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => handleDemoDelete(demo.id, demo.demo_url)} className="p-2 text-slate-500 hover:text-red-500 transition-colors">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                )) : <p className="text-slate-500 text-sm">You haven't uploaded any demos yet.</p>}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+
                 {/* --- THIS IS THE MODIFIED ORDERS SECTION --- */}
                 <div className="bg-slate-800 p-8 rounded-lg border border-slate-700">
                     <div className="flex justify-between items-center mb-6">
@@ -408,3 +635,4 @@ const ActorDashboardPage = () => {
 };
 
 export default ActorDashboardPage;
+

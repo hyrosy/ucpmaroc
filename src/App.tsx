@@ -26,6 +26,8 @@ import ClientAuthPage from './pages/ClientAuthPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
 import ActorLoginPage from './pages/ActorLoginPage';
 import ActorSignUpPage from './pages/ActorSignUpPage';
+import MyShortlistPage from './pages/MyShortlistPage';
+
 
 
 
@@ -62,7 +64,7 @@ function App() {
         <Route path="/client-dashboard" element={<ClientDashboardPage />} />
         <Route path="/actor-login" element={<ActorLoginPage />} />
         <Route path="/actor-signup" element={<ActorSignUpPage />} />
-
+        <Route path="/my-shortlist" element={<MyShortlistPage />} />
       </Routes>
       </main>
       <Footer />

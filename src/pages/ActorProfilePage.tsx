@@ -1,12 +1,23 @@
 // In src/pages/ActorProfilePage.tsx
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import QuoteCalculatorModal from '../components/QuoteCalculatorModal';
-import { Play, Pause, Mic, Phone, CheckCircle, Share2 } from 'lucide-react';
+import { Play, Pause, Mic, Phone, CheckCircle, Share2, Heart, UserPlus } from 'lucide-react';
+import GlobalAudioPlayer from '../components/GlobalAudioPlayer';
 
 // Recommended: Move this to a central 'src/types.ts' file and import it
+interface Demo {
+  url: string | undefined;
+  id: string;
+  title: string;
+  demo_url: string;
+  language: string;
+  style_tag: string;
+  likes?: number; // Likes will be fetched separately
+}
+
 interface Actor {
   id: string;
   ActorName: string;
@@ -16,15 +27,14 @@ interface Actor {
   Tags: string | null;
   HeadshotURL: string;
   MainDemoURL: string;
-  Demo2_Title: string | null;
-  Demo2_URL: string | null;
-  Demo3_Title: string | null;
-  Demo3_URL: string | null;
+  revisions_allowed: number;
   BaseRate_per_Word: string;
   WebMultiplier: string;
   BroadcastMultiplier: string;
   ActorEmail: string;
   slug: string;
+  actor_followers: { count: number }[];
+  demo_likes: { count: number }[];
 }
 
 const ActorProfilePage = () => {
@@ -34,54 +44,170 @@ const ActorProfilePage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-
-    // --- Player State ---
-    const [demos, setDemos] = useState<{ title: string; url: string }[]>([]);
-    const [currentTrackIndex, setCurrentTrackIndex] = useState<number | null>(null);
+    const [followerCount, setFollowerCount] = useState(0);
+    const [totalLikes, setTotalLikes] = useState(0);
+    const [userLikes, setUserLikes] = useState<string[]>([]);
+    
+    // --- ADD PLAYER STATE ---
+    const [demos, setDemos] = useState<Demo[]>([]);
+    const [currentTrack, setCurrentTrack] = useState<{ url: string, actor: { ActorName: string, HeadshotURL: string } } | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
     const audioRef = useRef<HTMLAudioElement>(null);
+    
+
+    // --- NEW: Follow State ---
+    const [isFollowing, setIsFollowing] = useState(false);
+
 
     // Data fetching (already optimized)
     useEffect(() => {
-        const getActorProfile = async () => {
+        const getActorData = async () => {
             if (!actorSlug) return;
             setIsLoading(true);
-            const { data, error } = await supabase.from('actors').select('*').eq('slug', actorSlug).eq('IsActive', true).single();
-            if (error) {
+
+            // 1. Fetch the main actor profile
+            const { data: actorData, error: actorError } = await supabase
+                .from('actors')
+                .select(`*, actor_followers(count), demo_likes(count)`)
+                .eq('slug', actorSlug)
+                .single();
+
+            if (actorError || !actorData) {
                 setError('Actor not found.');
-                console.error(error);
-            } else if (data) {
-                setActor(data);
-                const tracklist = [
-                    { title: 'Main Demo Reel', url: data.MainDemoURL },
-                    { title: data.Demo2_Title, url: data.Demo2_URL },
-                    { title: data.Demo3_Title, url: data.Demo3_URL },
-                ].filter(d => d.url && d.title) as { title: string; url: string }[];
-                setDemos(tracklist);
+                setIsLoading(false);
+                return;
             }
+            setActor(actorData);
+            setFollowerCount(actorData.actor_followers[0]?.count || 0);
+            setTotalLikes(actorData.demo_likes[0]?.count || 0);
+
+            // 2. Fetch all demos for this actor
+            const { data: demosData, error: demosError } = await supabase
+                .from('demos')
+                .select('*')
+                .eq('actor_id', actorData.id);
+
+            if (demosError) console.error("Error fetching demos:", demosError);
+
+            // 3. Fetch like counts for all demos
+            const demoUrls = (demosData || []).map(d => d.demo_url);
+            demoUrls.push(actorData.MainDemoURL); // Also check likes for the main demo
+
+            const { data: likesData } = await supabase.from('demo_likes').select('demo_url, count').in('demo_url', demoUrls);
+
+            // 4. Check user's like/follow status
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: followData } = await supabase.from('actor_followers').select().eq('actor_id', actorData.id).eq('user_id', user.id);
+                if (followData && followData.length > 0) setIsFollowing(true);
+
+                const { data: userLikesData } = await supabase.from('demo_likes').select('demo_url').eq('user_id', user.id).in('demo_url', demoUrls);
+                if (userLikesData) setUserLikes(userLikesData.map(l => l.demo_url));
+            }
+
+            // 5. Combine all data and set the state
+            const mainDemoTrack = {
+                id: 'main_demo',
+                title: 'Main Demo Reel',
+                demo_url: actorData.MainDemoURL,
+                language: actorData.Language,
+                style_tag: 'General',
+                likes: likesData?.find(l => l.demo_url === actorData.MainDemoURL)?.count || 0
+            };
+
+            const otherDemos = (demosData || []).map(d => ({
+                ...d,
+                likes: likesData?.find(l => l.demo_url === d.demo_url)?.count || 0
+            }));
+            
+            setDemos([mainDemoTrack, ...otherDemos]);
             setIsLoading(false);
         };
-        getActorProfile();
+        getActorData();
     }, [actorSlug]);
 
-    // Audio player logic (no changes needed)
+
+    // --- NEW: Functions to handle like/follow actions ---
+    const handleToggleFollow = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || !actor) return; // Must be logged in
+
+        if (isFollowing) {
+            await supabase.from('actor_followers').delete().match({ user_id: user.id, actor_id: actor.id });
+            setFollowerCount(prev => prev - 1);
+        } else {
+            await supabase.from('actor_followers').insert({ user_id: user.id, actor_id: actor.id });
+            setFollowerCount(prev => prev + 1);
+        }
+        setIsFollowing(!isFollowing);
+    };
+
+    const handleToggleLike = async (demo: Demo) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || !actor) return; // Must be logged in
+
+        const isCurrentlyLiked = userLikes.includes(demo.demo_url);
+        
+        if (isCurrentlyLiked) {
+            await supabase.from('demo_likes').delete().match({ user_id: user.id, demo_url: demo.demo_url });
+            setUserLikes(prev => prev.filter(url => url !== demo.demo_url));
+            setDemos(prev => prev.map(d => d.demo_url === demo.demo_url ? { ...d, likes: (d.likes || 1) - 1 } : d));
+            setTotalLikes(prev => prev - 1);
+        } else {
+            await supabase.from('demo_likes').insert({ user_id: user.id, actor_id: actor.id, demo_url: demo.demo_url });
+            setUserLikes(prev => [...prev, demo.demo_url]);
+            setDemos(prev => prev.map(d => d.demo_url === demo.demo_url ? { ...d, likes: (d.likes || 0) + 1 } : d));
+            setTotalLikes(prev => prev + 1);
+        }
+    };
+
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
-        if (isPlaying) { audio.play().catch(console.error); } 
-        else { audio.pause(); }
-    }, [isPlaying, currentTrackIndex]);
+        const updateTime = () => setCurrentTime(audio.currentTime);
+        const updateDuration = () => setDuration(audio.duration);
+        const handleEnded = () => setIsPlaying(false);
+        audio.addEventListener('timeupdate', updateTime);
+        audio.addEventListener('loadedmetadata', updateDuration);
+        audio.addEventListener('ended', handleEnded);
+        return () => {
+            audio.removeEventListener('timeupdate', updateTime);
+            audio.removeEventListener('loadedmetadata', updateDuration);
+            audio.removeEventListener('ended', handleEnded);
+        };
+    }, [currentTrack]);
 
-    const handlePlayPause = (index?: number) => {
-        const targetIndex = index ?? 0;
-        if (currentTrackIndex === targetIndex) {
+    // Audio player logic (no changes needed)
+    useEffect(() => {
+        if (isPlaying) audioRef.current?.play().catch(console.error);
+        else audioRef.current?.pause();
+    }, [isPlaying, currentTrack]);
+
+
+
+    const handlePlayPause = (demo?: Demo) => {
+        const targetDemo = demo || demos[0];
+        if (!targetDemo || !actor) return;
+        
+        const newTrack = {
+            url: targetDemo.demo_url,
+            actor: {
+                ActorName: actor.ActorName,
+                HeadshotURL: actor.HeadshotURL
+            }
+        };
+        
+        if (currentTrack?.url === newTrack.url) {
             setIsPlaying(!isPlaying);
         } else {
-            setCurrentTrackIndex(targetIndex);
+            setCurrentTrack(newTrack);
             setIsPlaying(true);
         }
     };
 
+    
 
     // --- NEW: Robust Share Function ---
     const handleShare = async () => {
@@ -128,7 +254,7 @@ const ActorProfilePage = () => {
 
     return (
         <div className="min-h-screen bg-slate-900 text-white">
-            <audio ref={audioRef} src={currentTrackIndex !== null ? demos[currentTrackIndex]?.url : ''} />
+            <audio ref={audioRef} src={currentTrack?.url || ''} />
             
             <header className="h-auto md:h-96 relative flex items-end bg-gradient-to-t from-slate-900 via-purple-900/50 to-purple-800">
                 {/* --- NEW: Added a max-width container with padding --- */}
@@ -145,7 +271,11 @@ const ActorProfilePage = () => {
                                 <p className="font-semibold text-sm">Verified Voice Actor</p>
                             </div>
                             <h1 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter text-white break-words">{actor.ActorName}</h1>
-                            <p className="text-slate-300 text-sm md:text-base mt-1 md:mt-2">{actor.Language} | {actor.Gender}</p>
+                            <p className="text-slate-300 text-sm md:text-base mt-1 md:mt-2">{actor.Language} | {actor.Gender} 
+                            <span className="mx-2">&middot;</span>
+                            {followerCount} Followers 
+                            <span className="mx-2">&middot;</span>
+                                {totalLikes.toLocaleString()} Likes</p>
                         </div>
                     </div>
                 </div>
@@ -163,21 +293,19 @@ const ActorProfilePage = () => {
                     <button onClick={handleShare} className="p-3 border-2 border-slate-600 hover:border-white rounded-full text-slate-300 hover:text-white transition">
                         <Share2 size={18} />
                     </button>
+                    <button onClick={handleToggleFollow} className={`px-6 py-3 border-2 rounded-full font-bold text-sm transition ${isFollowing ? 'bg-white text-slate-900 border-white' : 'border-slate-600 text-white hover:border-white'}`}>
+                        {isFollowing ? 'Following' : 'Follow'}
+                    </button>
                 </div>
 
                 {/* Demo Tracklist */}
                 <div className="mb-12">
-                    <h2 className="text-2xl font-bold mb-4">Popular Demos</h2>
+                    <h2 className="text-2xl font-bold mb-4">Demos</h2>
                     <div className="flex flex-col">
                         {demos.map((demo, index) => (
-                            <div
-                                key={index}
-                                onClick={() => handlePlayPause(index)}
-                                className="group grid grid-cols-[40px_1fr_auto] items-center gap-4 p-2 rounded-lg hover:bg-slate-800/50 cursor-pointer"
-                            >
-                                {/* 1. Track Number / Play/Pause Icon */}
-                                <div className="flex items-center justify-center text-slate-400">
-                                    {currentTrackIndex === index && isPlaying ? (
+                            <div key={demo.id} className="group grid grid-cols-[40px_1fr_auto_auto] items-center gap-4 p-2 rounded-lg hover:bg-slate-800/50">
+                                <div onClick={() => handlePlayPause(demo)} className="flex items-center justify-center text-slate-400 cursor-pointer">
+                                    {currentTrack?.url === demo.demo_url && isPlaying ? (
                                         <Pause size={16} className="text-purple-400" />
                                     ) : (
                                         <>
@@ -186,17 +314,15 @@ const ActorProfilePage = () => {
                                         </>
                                     )}
                                 </div>
-                                
-                                {/* 2. Track Title */}
-                                <div>
-                                    <p className={`font-semibold truncate ${currentTrackIndex === index ? 'text-purple-400' : 'text-white'}`}>
-                                        {demo.title}
-                                    </p>
+                                <div onClick={() => handlePlayPause(demo)} className="cursor-pointer">
+                                    <p className={`font-semibold truncate ${currentTrack?.url === demo.demo_url ? 'text-purple-400' : 'text-white'}`}>{demo.title}</p>
+                                    <p className="text-sm text-slate-400">{demo.language} | {demo.style_tag}</p>
                                 </div>
-                                
-                                {/* 3. (Optional) Duration - can be added later */}
-                                <div className="text-slate-400 text-sm">
-                                    {/* Example: 2:34 */}
+                                <div className="flex items-center gap-2 text-slate-400">
+                                    <button onClick={() => handleToggleLike(demo)}>
+                                        <Heart size={16} className={`transition-colors ${userLikes.includes(demo.demo_url) ? 'text-pink-500 fill-current' : 'text-slate-500 group-hover:text-white'}`} />
+                                    </button>
+                                    <span className="text-sm w-8">{demo.likes}</span>
                                 </div>
                             </div>
                         ))}
@@ -213,6 +339,16 @@ const ActorProfilePage = () => {
                     </div>
                 )}
             </main>
+
+            {/* --- ADD THE PLAYER --- */}
+            <GlobalAudioPlayer
+                audioRef={audioRef}
+                currentTrack={currentTrack}
+                isPlaying={isPlaying}
+                onPlayPause={() => handlePlayPause()}
+                duration={duration}
+                currentTime={currentTime}
+            />
 
             {isQuoteModalOpen && actor && ( <QuoteCalculatorModal actor={actor} onClose={() => setIsQuoteModalOpen(false)} /> )}
         </div>

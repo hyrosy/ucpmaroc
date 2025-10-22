@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Camera, Film, Award, Users, Clock, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Play, Film, Award, Users, ChevronRight } from 'lucide-react';
 
 const VideographySection = () => {
   const [isVisible, setIsVisible] = useState(false);
